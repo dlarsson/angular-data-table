@@ -74,6 +74,7 @@
       on-row-click="onRowClick(row)"
       class="material"
       on-select="onSelect(rows)"
+      on-deselect="onDeselect(rows)"
       selected="selected"></dtable>
 
       <div class="selected-box">
@@ -89,7 +90,8 @@
       rows="data"
       on-row-click="onRowClick(row)"
       class="material"
-      on-select="onSelect(row)"
+      on-select="onSelect(rows)"
+      on-deselect="onDeselect(rows)"
       selected="selected2"></dtable>
 
       <div class="selected-box">
@@ -106,7 +108,8 @@
       on-row-click="onRowClick(row)"
       style="height:300px"
       class="material"
-      on-select="onSelect(row)"
+      on-select="onSelect(rows)"
+      on-deselect="onDeselect(rows)"
       selected="selected3"></dtable>
 
       <div class="selected-box">
@@ -172,8 +175,12 @@
           $scope.selected2 = [];
           $scope.selected3 = [];
 
-          $scope.onSelect = function(row){
-            console.log('ROW SELECTED!', row);
+          $scope.onSelect = function(rows){
+            console.log('ROWS SELECTED!', rows);
+          }
+
+          $scope.onDeselect = function(rows){
+            console.log('ROWS DESELECTED!', rows);
           }
 
           $scope.onRowClick = function(row){
