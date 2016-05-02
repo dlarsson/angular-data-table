@@ -50,6 +50,11 @@ class PagerController {
       this.getPages(this.page || 1);
     });
 
+    $scope.$watch('pager.size', (newVal) => {
+      this.calcTotalPages(this.size, this.count);
+      this.getPages(this.page || 1);
+    });
+
     $scope.$watch('pager.page', (newVal) => {
       if (newVal !== 0 && newVal <= this.totalPages) {
         this.getPages(newVal);
@@ -360,9 +365,14 @@ function CellDirective($rootScope, $compile, $log, $timeout){
             ng-style="cell.styles()"
             ng-class="cell.cellClass()">
         <label ng-if="cell.column.isCheckboxColumn" class="dt-checkbox">
+          <md-checkbox ng-checked="cell.selected"
+                       ng-click="cell.onCheckboxChanged($event)">
+          </md-checkbox>
+          <!--
           <input type="checkbox"
                  ng-checked="cell.selected"
                  ng-click="cell.onCheckboxChanged($event)" />
+          -->
         </label>
         <span ng-if="cell.column.isTreeColumn && cell.hasChildren"
               ng-class="cell.treeClass()"
@@ -774,7 +784,7 @@ class SelectionController {
 
     this.body.onRowClick({ row: row });
   }
-  
+
   /**
    * Handler for the row double click event
    * @param  {object} event
@@ -816,6 +826,7 @@ class SelectionController {
           var idx = this.selected.indexOf(row);
           if(idx > -1){
             this.selected.splice(idx, 1);
+            this.body.onDeselect({ rows: [ row ]});
           } else {
             if(this.options.multiSelectOnShift && this.selected.length === 1) {
               this.selected.splice(0, 1);
@@ -1501,14 +1512,15 @@ function BodyDirective($timeout){
       onPage: '&',
       onTreeToggle: '&',
       onSelect: '&',
+      onDeselect: '&',
       onRowClick: '&',
       onRowDblClick: '&'
     },
     scope: true,
     template: `
-      <div 
-        class="progress-linear" 
-        role="progressbar" 
+      <div
+        class="progress-linear"
+        role="progressbar"
         ng-show="body.options.paging.loadingIndicator">
         <div class="container">
           <div class="bar"></div>
@@ -1518,7 +1530,7 @@ function BodyDirective($timeout){
         <dt-scroller class="dt-body-scroller">
           <dt-group-row ng-repeat-start="r in body.tempRows track by $index"
                         ng-if="r.group"
-                        ng-style="body.groupRowStyles(r)" 
+                        ng-style="body.groupRowStyles(r)"
                         options="body.options"
                         on-group-toggle="body.onGroupToggle(group)"
                         expanded="body.getRowExpanded(r)"
@@ -1545,11 +1557,11 @@ function BodyDirective($timeout){
                   ng-style="body.rowStyles(r)">
           </dt-row>
         </dt-scroller>
-        <div ng-if="body.rows && !body.rows.length" 
-             class="empty-row" 
+        <div ng-if="body.rows && !body.rows.length"
+             class="empty-row"
              ng-bind="::body.options.emptyMessage">
        </div>
-       <div ng-if="body.rows === undefined" 
+       <div ng-if="body.rows === undefined"
              class="loading-row"
              ng-bind="::body.options.loadingMessage">
         </div>
@@ -1598,7 +1610,7 @@ class HeaderCellController{
       'resizable': this.column.resizable
     };
 
-    if(this.column.heaerClassName){
+    if(this.column.headerClassName){
       cls[this.column.headerClassName] = true;
     }
 
@@ -1682,9 +1694,14 @@ function HeaderCellDirective($compile){
              min-width="hcell.column.minWidth"
              max-width="hcell.column.maxWidth">
           <label ng-if="hcell.column.isCheckboxColumn && hcell.column.headerCheckbox" class="dt-checkbox">
+            <md-checkbox ng-checked="hcell.selected"
+                         ng-click="hcell.onCheckboxChange()">
+            </md-checkbox>
+            <!--
             <input type="checkbox"
                    ng-checked="hcell.selected"
                    ng-click="hcell.onCheckboxChange()" />
+            -->
           </label>
           <span class="dt-header-cell-label"
                 ng-click="hcell.onSorted()">
@@ -2433,7 +2450,7 @@ const ColumnDefaults = {
   className: undefined,
 
   // header cell css class name
-  heaerClassName: undefined,
+  headerClassName: undefined,
 
   // The grow factor relative to other columns. Same as the flex-grow
   // API from http://www.w3.org/TR/css3-flexbox/. Basically,
@@ -2721,9 +2738,7 @@ class DataTableController {
       });
 
     if(sorts.length){
-      if (this.onSort()){
-        this.onSort()(sorts);
-      }
+      this.onSort({sorts: sorts});
 
       if (this.options.onSort){
         this.options.onSort(sorts);
@@ -2837,7 +2852,17 @@ class DataTableController {
   }
 
   /**
-   * Occurs when a row was click but may not be selected.
+   * Occurs when a row was deselected
+   * @param  {object} rows
+   */
+  onDeselected(rows){
+    this.onDeselect({
+      rows: rows
+    });
+  }
+
+  /**
+   * Occurs when a row was clicked but may not be selected.
    * @param  {object} row
    */
   onRowClicked(row){
@@ -2870,6 +2895,7 @@ function DataTableDirective($window, $timeout, $parse){
       selected: '=?',
       expanded: '=?',
       onSelect: '&',
+      onDeselect: '&',
       onSort: '&',
       onTreeToggle: '&',
       onPage: '&',
@@ -2899,6 +2925,7 @@ function DataTableDirective($window, $timeout, $parse){
                    expanded="dt.expanded"
                    columns="dt.columnsByPin"
                    on-select="dt.onSelected(rows)"
+                   on-deselect="dt.onDeselected(rows)"
                    on-row-click="dt.onRowClicked(row)"
                    on-row-dbl-click="dt.onRowDblClicked(row)"
                    column-widths="dt.columnWidths"
