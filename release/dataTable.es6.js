@@ -2064,7 +2064,7 @@ function ResizableDirective($document, $timeout){
       function mousemove(event) {
         event = event.originalEvent || event;
         
-        var width = parent[0].scrollWidth,
+        var width = parent[0].clientWidth,
             movementX = event.movementX || event.mozMovementX || (event.screenX - prevScreenX),
             newWidth = width + (movementX || 0);
 
@@ -2080,7 +2080,7 @@ function ResizableDirective($document, $timeout){
       function mouseup() {
         if($scope.onResize){
           $timeout(() => {
-            $scope.onResize({ width: parent[0].scrollWidth });
+            $scope.onResize({ width: parent[0].clientWidth });
           });
         }
 
@@ -2183,6 +2183,7 @@ let DataTableService = {
       angular.forEach(columnElms, (c) => {
         let column = {};
 
+        var visible = true;
         // Iterate through each attribute
         angular.forEach(c.attributes, (attr) => {
           let attrName = CamelCase(attr.name);
@@ -2202,6 +2203,9 @@ let DataTableService = {
             case 'cellDataGetter':
               column[attrName] = parse(attr.value);
               break;
+            case 'visible':
+              visible = parse(attr.value)(scope);
+              break;
             default:
               column[attrName] = parse(attr.value)(scope);
               break;
@@ -2218,7 +2222,8 @@ let DataTableService = {
           column.template = c.innerHTML;
         }
 
-        this.columns[id].push(column);
+        if (visible)
+          this.columns[id].push(column);
       });
     });
 
@@ -2830,7 +2835,7 @@ class DataTableController {
    * @param  {object} column
    * @param  {int} width
    */
-  onResize(column, width){
+  onResized(column, width){
     var idx =this.options.columns.indexOf(column);
     if(idx > -1){
       var column = this.options.columns[idx];
@@ -2839,6 +2844,13 @@ class DataTableController {
 
       this.adjustColumns(idx);
       this.calculateColumns();
+    }
+
+    if (this.onColumnResize){
+      this.onColumnResize({
+        column: column,
+        width: width
+      });
     }
   }
 
@@ -2901,7 +2913,8 @@ function DataTableDirective($window, $timeout, $parse){
       onTreeToggle: '&',
       onPage: '&',
       onRowClick: '&',
-      onRowDblClick: '&'
+      onRowDblClick: '&',
+      onColumnResize: '&'
     },
     controllerAs: 'dt',
     template: function(element){
@@ -2917,7 +2930,7 @@ function DataTableDirective($window, $timeout, $parse){
                      columns="dt.columnsByPin"
                      column-widths="dt.columnWidths"
                      ng-if="dt.options.headerHeight"
-                     on-resize="dt.onResize(column, width)"
+                     on-resize="dt.onResized(column, width)"
                      selected="dt.isAllRowsSelected()"
                      on-sort="dt.onSorted()">
           </dt-header>
