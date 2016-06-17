@@ -255,7 +255,7 @@ function FooterDirective(){
                size="footer.paging.size"
                count="footer.paging.count"
                on-page="footer.onPaged(page)"
-               ng-show="footer.paging.count > 1">
+               ng-show="footer.paging.count / footer.paging.size > 1">
          </dt-pager>
       </div>`,
     replace: true
@@ -270,7 +270,8 @@ class CellController {
    */
   styles(){
     return {
-      width: this.column.width  + 'px'
+      width: this.column.width  + 'px',
+	  'min-width': this.column.width + 'px'
     };
   }
 
@@ -2982,10 +2983,10 @@ function DataTableDirective($window, $timeout, $parse){
             ctrl.adjustColumns();
           };
 
-          angular.element($window).bind('resize',
-            throttle(() => {
-              $timeout(resize);
-            }));
+          var resizeHandler = throttle(function () {
+            $timeout(resize);
+          });
+          angular.element($window).bind('resize', resizeHandler);
 
           // When an item is hidden for example
           // in a tab with display none, the height
@@ -3004,7 +3005,7 @@ function DataTableDirective($window, $timeout, $parse){
 
           // prevent memory leaks
           $scope.$on('$destroy', () => {
-            angular.element($window).off('resize');
+            angular.element($window).off('resize', resizeHandler);
           });
         }
       };

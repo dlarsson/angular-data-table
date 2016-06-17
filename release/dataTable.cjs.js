@@ -214,7 +214,7 @@ function FooterDirective() {
       paging: '=',
       onPage: '&'
     },
-    template: "<div class=\"dt-footer\">\n        <div class=\"page-count\">{{footer.paging.count}} total</div>\n        <dt-pager page=\"footer.page\"\n               size=\"footer.paging.size\"\n               count=\"footer.paging.count\"\n               on-page=\"footer.onPaged(page)\"\n               ng-show=\"footer.paging.count > 1\">\n         </dt-pager>\n      </div>",
+    template: "<div class=\"dt-footer\">\n        <div class=\"page-count\">{{footer.paging.count}} total</div>\n        <dt-pager page=\"footer.page\"\n               size=\"footer.paging.size\"\n               count=\"footer.paging.count\"\n               on-page=\"footer.onPaged(page)\"\n               ng-show=\"footer.paging.count / footer.paging.size > 1\">\n         </dt-pager>\n      </div>",
     replace: true
   };
 }
@@ -228,7 +228,8 @@ var CellController = (function () {
     key: "styles",
     value: function styles() {
       return {
-        width: this.column.width + 'px'
+        width: this.column.width + 'px',
+        'min-width': this.column.width + 'px'
       };
     }
   }, {
@@ -2313,9 +2314,10 @@ function DataTableDirective($window, $timeout, $parse) {
             ctrl.adjustColumns();
           };
 
-          angular.element($window).bind('resize', throttle(function () {
+          var resizeHandler = throttle(function () {
             $timeout(resize);
-          }));
+          });
+          angular.element($window).bind('resize', resizeHandler);
 
           var checkVisibility = function checkVisibility() {
             var bounds = $elm[0].getBoundingClientRect(),
@@ -2327,7 +2329,7 @@ function DataTableDirective($window, $timeout, $parse) {
           $elm.addClass('dt-loaded');
 
           $scope.$on('$destroy', function () {
-            angular.element($window).off('resize');
+            angular.element($window).off('resize', resizeHandler);
           });
         }
       };
